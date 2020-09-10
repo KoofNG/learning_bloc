@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:learn_bloc/core/blocs/weatherBloc/weather_bloc.dart';
 import 'package:learn_bloc/core/models/weather.model.dart';
+import 'package:learn_bloc/ui/screens/weatherSearchDetail.screen.dart';
 import 'package:learn_bloc/ui/widgets/inputField.widget.dart';
 
 class WeatherSearchPage extends StatelessWidget {
@@ -30,7 +31,7 @@ class WeatherSearchPage extends StatelessWidget {
           child: BlocBuilder<WeatherBloc, WeatherState>(
             builder: (context, state) {
               if (state is WeatherInitial) {
-                return buildInitialInput();
+                return buildInitialInput(context);
               }
               if (state is WeatherLoading) {
                 return buildLoading();
@@ -39,7 +40,7 @@ class WeatherSearchPage extends StatelessWidget {
                 return buildColumnWithData(context, state.weatherModel);
               }
               if (state is WeatherError) {
-                return buildInitialInput();
+                return buildInitialInput(context);
               }
               return SizedBox.shrink();
             },
@@ -49,9 +50,17 @@ class WeatherSearchPage extends StatelessWidget {
     );
   }
 
-  Widget buildInitialInput() {
+  Widget buildInitialInput(BuildContext context) {
     return Center(
-      child: CityInputField(),
+      child: CityInputField(
+        onSubmitted: (value) {
+          // ignore: close_sinks
+          final WeatherBloc weatherBloc = BlocProvider.of<WeatherBloc>(context);
+          weatherBloc.add(
+            GetWeather(cityName: value),
+          );
+        },
+      ),
     );
   }
 
@@ -73,7 +82,6 @@ class WeatherSearchPage extends StatelessWidget {
           ),
         ),
         Text(
-          // Display the temperature with 1 decimal place
           "${weatherModel.temperatureCelsius} °C",
           style: TextStyle(fontSize: 80),
         ),
@@ -81,14 +89,27 @@ class WeatherSearchPage extends StatelessWidget {
           child: Text('See Details'),
           color: Colors.lightBlue[100],
           onPressed: () {
-            // Navigator.of(context).push(MaterialPageRoute(
-            //   builder: (_) => WeatherDetailPage(
-            //     masterWeather: weather,
-            //   ),
-            // ));
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: BlocProvider.of<WeatherBloc>(context),
+                  child: WeatherSearchDetail(
+                    weatherModel: weatherModel,
+                  ),
+                ),
+              ),
+            );
           },
         ),
-        CityInputField(),
+        CityInputField(
+          onSubmitted: (value) {
+            // ignore: close_sinks
+            final WeatherBloc weatherBloc = BlocProvider.of<WeatherBloc>(context);
+            weatherBloc.add(
+              GetWeather(cityName: value),
+            );
+          },
+        ),
       ],
     );
   }
